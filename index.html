@@ -1,0 +1,734 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Acesso Exclusivo</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    :root{
+      --bg:#0e1220;
+      --text:#eaeaf0;
+      --muted:#cdd3ff;
+      --card:#161a2b;
+      --border:#d7dbe0;
+      --primary:#4d7cff;
+      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    body{
+      font-family: Arial, sans-serif;
+      margin:0;
+      color: var(--text);
+      background: radial-gradient(circle at top, rgba(47,67,120,.38), transparent 38%), var(--bg);
+    }
+
+    .wrap{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding: 48px 18px;
+    }
+
+    .container{
+      width: min(560px, 100%);
+      display:flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+    }
+
+    .logo-top{
+      width: 150px;
+      height:auto;
+      max-width: 100%;
+      object-fit: contain;
+      display:block;
+      margin:0;
+    }
+
+    .card{
+      width: 100%;
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 32px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(0,0,0,.04);
+    }
+
+    .title{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      margin-bottom: 10px;
+      text-align:center;
+    }
+
+    .title-icon{
+      font-size: 22px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h1{
+      font-size: 26px;
+      line-height: 1.1;
+      margin:0;
+      letter-spacing: -0.2px;
+    }
+
+    p{
+      margin: 0 0 22px;
+      color: var(--muted);
+      font-size: 15px;
+      text-align:center;
+    }
+
+    .field{
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    label{
+      font-size: 13px;
+      margin:0;
+      opacity:.95;
+    }
+
+    input,
+    textarea{
+      width:100%;
+      padding: 16px 14px;
+      font-size: 18px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      outline:none;
+      background:#fff;
+      color:#111;
+      font-family: Arial, sans-serif;
+    }
+
+    textarea{
+      min-height: 90px;
+      resize: vertical;
+      font-size: 15px;
+    }
+
+    input::placeholder,
+    textarea::placeholder{
+      color:#777;
+    }
+
+    input:focus,
+    textarea:focus{
+      border-color:#6aa5ff;
+      box-shadow:0 0 0 4px rgba(106,165,255,.22);
+    }
+
+    button{
+      width:100%;
+      margin-top: 16px;
+      padding: 16px 14px;
+      font-size: 17px;
+      font-weight: 700;
+      border:0;
+      border-radius: 12px;
+      cursor:pointer;
+      background: var(--primary);
+      color:#fff;
+      transition: transform .04s ease, opacity .2s ease, filter .2s ease;
+    }
+
+    button:active{
+      transform: translateY(1px);
+    }
+
+    button:hover{
+      filter: brightness(1.05);
+    }
+
+    button:disabled{
+      opacity:.7;
+      cursor:not-allowed;
+      filter: none;
+    }
+
+    .msg{
+      margin-top: 16px;
+      font-weight: 700;
+      font-size: 14px;
+      text-align:center;
+    }
+
+    .ok{ color:#4ade80; }
+    .err{ color:#f87171; }
+
+    .popup-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.72);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+
+    .popup-overlay.ativo{
+      display: flex;
+    }
+
+    .popup-card{
+      width: min(540px, 100%);
+      max-height: 92vh;
+      overflow-y: auto;
+      background: var(--card);
+      color: var(--text);
+      border-radius: var(--radius);
+      padding: 30px;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.08);
+      position: relative;
+    }
+
+    .popup-close{
+      position: absolute;
+      top: 12px;
+      right: 16px;
+      width: auto;
+      margin: 0;
+      padding: 0;
+      background: transparent;
+      color: #fff;
+      border: 0;
+      font-size: 30px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .popup-close:hover{
+      filter: brightness(1.2);
+    }
+
+    .popup-card h2{
+      margin: 0 0 10px;
+      font-size: 24px;
+      line-height: 1.2;
+      text-align: center;
+    }
+
+    .popup-card p{
+      margin: 0 0 18px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.5;
+      text-align: center;
+    }
+
+    .popup-field{
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .popup-field label{
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .popup-field input{
+      font-size: 15px;
+      padding: 13px 14px;
+    }
+
+    .popup-field input[readonly]{
+      background:#eef1f7;
+      color:#333;
+      cursor:not-allowed;
+    }
+
+    .avaliacao-opcoes{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .avaliacao-btn{
+      width: 100%;
+      margin: 0;
+      padding: 12px;
+      font-size: 14px;
+      border-radius: 12px;
+      background: #242b44;
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.12);
+      cursor: pointer;
+    }
+
+    .avaliacao-btn.selecionado{
+      background: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .popup-msg{
+      min-height: 20px;
+      margin-top: 12px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+    }
+
+    .popup-msg.ok{
+      color: #4ade80;
+    }
+
+    .popup-msg.err{
+      color: #f87171;
+    }
+
+    .pagina-indisponivel{
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      background: radial-gradient(circle at top, rgba(47,67,120,.38), transparent 38%), var(--bg);
+      z-index: 10000;
+    }
+
+    .pagina-indisponivel.ativo{
+      display: flex;
+    }
+
+    .indisponivel-card{
+      width: min(620px, 100%);
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 42px 32px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 1px solid rgba(255,255,255,.08);
+    }
+
+    .logo-indisponivel{
+      width: 170px;
+      max-width: 100%;
+      height: auto;
+      margin: 0 auto 30px;
+      display: block;
+      object-fit: contain;
+    }
+
+    .icone-indisponivel{
+      width: 118px;
+      height: 118px;
+      margin: 0 auto 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.08);
+      font-size: 56px;
+    }
+
+    .indisponivel-card h2{
+      margin: 0 0 16px;
+      font-size: 30px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+
+    .indisponivel-card p{
+      margin: 0 auto 28px;
+      max-width: 480px;
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.5;
+    }
+
+    .btn-voltar{
+      max-width: 320px;
+      margin: 0 auto;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="container">
+
+      <img src="img/logo.png" alt="Logo da empresa" class="logo-top">
+
+      <div class="card">
+        <div class="title">
+          <span class="title-icon">🏪</span>
+          <h1>Identificação da loja</h1>
+        </div>
+
+        <p>Informe o CNPJ para continuar</p>
+
+        <div class="field">
+          <input
+            id="cnpj"
+            inputmode="numeric"
+            autocomplete="off"
+            placeholder="Ex.: 01234567800019"
+          />
+        </div>
+
+        <button id="btn">Liberar acesso</button>
+
+        <div id="msg" class="msg"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="popupPesquisa" class="popup-overlay" aria-hidden="true">
+    <div class="popup-card">
+      <button id="btnFecharPesquisa" class="popup-close" type="button" aria-label="Fechar pesquisa">×</button>
+
+      <h2>Pesquisa de satisfação</h2>
+
+      <p>
+        Antes de acessar o material, responda rapidamente a pesquisa abaixo.
+      </p>
+
+      <div class="popup-field">
+        <label for="pesquisaCnpj">CNPJ</label>
+        <input
+          id="pesquisaCnpj"
+          inputmode="numeric"
+          autocomplete="off"
+          readonly
+        />
+      </div>
+
+      <div class="popup-field">
+        <label for="pesquisaResponsavel">Nome do responsável</label>
+        <input
+          id="pesquisaResponsavel"
+          autocomplete="off"
+          placeholder="Digite o nome do responsável"
+        />
+      </div>
+
+      <div class="popup-field">
+        <label>Como você avalia seu atendimento?</label>
+
+        <div class="avaliacao-opcoes">
+          <button type="button" class="avaliacao-btn" data-avaliacao="Muito satisfeito">Muito satisfeito</button>
+          <button type="button" class="avaliacao-btn" data-avaliacao="Satisfeito">Satisfeito</button>
+          <button type="button" class="avaliacao-btn" data-avaliacao="Indiferente">Indiferente</button>
+          <button type="button" class="avaliacao-btn" data-avaliacao="Insatisfeito">Insatisfeito</button>
+          <button type="button" class="avaliacao-btn" data-avaliacao="Muito insatisfeito">Muito insatisfeito</button>
+        </div>
+      </div>
+
+      <div class="popup-field">
+        <label for="pesquisaComentario">Deixe um comentário sobre a sua avaliação</label>
+        <textarea
+          id="pesquisaComentario"
+          placeholder="Escreva seu comentário aqui"
+        ></textarea>
+      </div>
+
+      <button id="btnFinalizarPesquisa" type="button">
+        Finalizar pesquisa
+      </button>
+
+      <div id="msgPesquisa" class="popup-msg"></div>
+    </div>
+  </div>
+
+  <div id="paginaIndisponivel" class="pagina-indisponivel" aria-hidden="true">
+    <div class="indisponivel-card">
+      <img src="img/logo.png" alt="Logo Rede Inova" class="logo-indisponivel">
+
+      <div class="icone-indisponivel" aria-hidden="true">
+        📄
+      </div>
+
+      <h2>Material indisponível</h2>
+
+      <p>
+        O material solicitado ainda não está disponível.<br>
+        Tente novamente mais tarde ou entre em contato com a Rede Inova.
+      </p>
+
+      <button id="btnVoltarInicio" type="button" class="btn-voltar">
+        Voltar para o início
+      </button>
+    </div>
+  </div>
+
+
+  <script>
+    const $cnpj = document.getElementById('cnpj');
+    const $msg  = document.getElementById('msg');
+    const $btn  = document.getElementById('btn');
+
+    const $popupPesquisa = document.getElementById('popupPesquisa');
+    const $pesquisaCnpj = document.getElementById('pesquisaCnpj');
+    const $pesquisaResponsavel = document.getElementById('pesquisaResponsavel');
+    const $pesquisaComentario = document.getElementById('pesquisaComentario');
+    const $btnFinalizarPesquisa = document.getElementById('btnFinalizarPesquisa');
+    const $btnFecharPesquisa = document.getElementById('btnFecharPesquisa');
+    const $msgPesquisa = document.getElementById('msgPesquisa');
+    const $avaliacaoBtns = document.querySelectorAll('.avaliacao-btn');
+    const $paginaIndisponivel = document.getElementById('paginaIndisponivel');
+    const $btnVoltarInicio = document.getElementById('btnVoltarInicio');
+
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVq2pVKs6J9q-6dtbRO17UWDYyOZRrX477tjtUk8g-4-OGoV8HhQYDxbjTdA1NutmI/exec';
+
+    const PESQUISA_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxuTGfd30dCI410zoMlNCA9gaGdKpuk8OfIYvR3S3RJUd4-FEclLr6qb2Ql5_wq_DpX/exec';
+
+    const MSG_NAO_CADASTRADO = 'CNPJ não encontrado. Verifique os dados digitados ou entre em contato com a Rede Inova.';
+    const MSG_SEM_LINK = 'O material solicitado ainda não está disponível. Tente novamente mais tarde ou entre em contato com a Rede Inova.';
+    const MSG_ERRO_GENERICO = 'Erro de comunicação. Tente novamente.';
+
+    let linkDrivePendente = '';
+    let avaliacaoSelecionada = '';
+    let materialDisponivel = false;
+
+    function limparNumeros(s){
+      return (s || '').replace(/\D/g, '');
+    }
+
+    function mostrar(texto, tipo){
+      $msg.textContent = texto;
+      $msg.className = 'msg ' + (tipo === 'ok' ? 'ok' : 'err');
+    }
+
+    function mostrarPesquisa(texto, tipo){
+      $msgPesquisa.textContent = texto;
+      $msgPesquisa.className = 'popup-msg ' + (tipo === 'ok' ? 'ok' : 'err');
+    }
+
+    function abrirPopupPesquisa(linkDrive, cnpj, materialLiberado){
+      linkDrivePendente = linkDrive || '';
+      materialDisponivel = Boolean(materialLiberado && linkDrivePendente);
+      avaliacaoSelecionada = '';
+
+      $pesquisaCnpj.value = cnpj;
+      $pesquisaResponsavel.value = '';
+      $pesquisaComentario.value = '';
+
+      mostrarPesquisa('', '');
+
+      $avaliacaoBtns.forEach(btn => btn.classList.remove('selecionado'));
+
+      $popupPesquisa.classList.add('ativo');
+      $popupPesquisa.setAttribute('aria-hidden', 'false');
+
+      setTimeout(() => {
+        $pesquisaResponsavel.focus();
+      }, 100);
+    }
+
+    function mostrarPaginaIndisponivel(){
+      $popupPesquisa.classList.remove('ativo');
+      $popupPesquisa.setAttribute('aria-hidden', 'true');
+
+      const wrap = document.querySelector('.wrap');
+      if (wrap) wrap.style.display = 'none';
+
+      $paginaIndisponivel.classList.add('ativo');
+      $paginaIndisponivel.setAttribute('aria-hidden', 'false');
+    }
+
+    function redirecionarOuAvisarMaterial(){
+      if (!materialDisponivel || !linkDrivePendente) {
+        mostrarPaginaIndisponivel();
+        return;
+      }
+
+      window.location.replace(linkDrivePendente);
+    }
+
+    function fecharPesquisaERedirecionar(){
+      redirecionarOuAvisarMaterial();
+    }
+
+    function ehNaoCadastrado(msg){
+      const m = String(msg || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      return (
+        m.includes('cnpj nao encontrado') ||
+        m.includes('nao encontrado') ||
+        m.includes('nao cadastrado') ||
+        m.includes('inexistente') ||
+        m.includes('negado') ||
+        m.includes('bloqueado') ||
+        m.includes('sem permissao') ||
+        m.includes('sem permissão')
+      );
+    }
+
+    $avaliacaoBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        avaliacaoSelecionada = btn.dataset.avaliacao;
+
+        $avaliacaoBtns.forEach(b => b.classList.remove('selecionado'));
+        btn.classList.add('selecionado');
+      });
+    });
+
+    async function enviarPesquisa(){
+      const cnpjPesquisa = limparNumeros($pesquisaCnpj.value);
+      const responsavel = $pesquisaResponsavel.value.trim();
+      const comentario = $pesquisaComentario.value.trim();
+
+      if (!PESQUISA_SCRIPT_URL || PESQUISA_SCRIPT_URL.includes('COLE_AQUI')) {
+        return mostrarPesquisa('URL da pesquisa não configurada no HTML.', 'err');
+      }
+
+      if (!cnpjPesquisa) return mostrarPesquisa('Informe o CNPJ.', 'err');
+      if (cnpjPesquisa.length !== 14) return mostrarPesquisa('CNPJ precisa ter 14 dígitos.', 'err');
+      if (!responsavel) return mostrarPesquisa('Informe o nome do responsável.', 'err');
+      if (!avaliacaoSelecionada) return mostrarPesquisa('Selecione uma opção de avaliação.', 'err');
+
+      $btnFinalizarPesquisa.disabled = true;
+      $btnFinalizarPesquisa.textContent = 'Enviando...';
+      mostrarPesquisa('Enviando pesquisa...', 'ok');
+
+      let enviouComSucesso = false;
+
+      try {
+        const payloadPesquisa = JSON.stringify({
+          action: 'pesquisa_satisfacao',
+          cnpj: cnpjPesquisa,
+          responsavel: responsavel,
+          avaliacao: avaliacaoSelecionada,
+          comentario: comentario
+        });
+
+        const respPesquisa = await fetch(PESQUISA_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: payloadPesquisa
+        });
+
+        if (!respPesquisa.ok) {
+          return mostrarPesquisa('Não foi possível registrar a pesquisa. Tente novamente.', 'err');
+        }
+
+        let dataPesquisa;
+
+        try {
+          dataPesquisa = await respPesquisa.json();
+        } catch {
+          return mostrarPesquisa('Resposta inválida ao registrar a pesquisa.', 'err');
+        }
+
+        if (!dataPesquisa || !dataPesquisa.ok) {
+          return mostrarPesquisa(
+            (dataPesquisa && dataPesquisa.msg) ? dataPesquisa.msg : 'Não foi possível registrar a pesquisa.',
+            'err'
+          );
+        }
+
+        enviouComSucesso = true;
+
+        redirecionarOuAvisarMaterial();
+
+      } catch (err) {
+        return mostrarPesquisa('Erro ao enviar a pesquisa. Tente novamente.', 'err');
+      } finally {
+        if (!enviouComSucesso) {
+          $btnFinalizarPesquisa.disabled = false;
+          $btnFinalizarPesquisa.textContent = 'Finalizar pesquisa';
+        }
+      }
+    }
+
+    $btnVoltarInicio.addEventListener('click', () => {
+      window.location.reload();
+    });
+
+    $btnFinalizarPesquisa.addEventListener('click', enviarPesquisa);
+    $btnFecharPesquisa.addEventListener('click', fecharPesquisaERedirecionar);
+
+    $btn.addEventListener('click', async () => {
+      const cnpj = limparNumeros($cnpj.value);
+
+      if (!cnpj) return mostrar('Digite um CNPJ.', 'err');
+      if (cnpj.length !== 14) return mostrar('CNPJ precisa ter 14 dígitos.', 'err');
+
+      mostrar('Validando...', 'ok');
+      $btn.disabled = true;
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+      try {
+        const resp = await fetch(`${APP_SCRIPT_URL}?cnpj=${encodeURIComponent(cnpj)}`, {
+          method: 'GET',
+          signal: controller.signal
+        });
+
+        if (!resp.ok) {
+          if (resp.status === 404) return mostrar('Servidor não encontrado (404).', 'err');
+          if (resp.status === 401 || resp.status === 403) return mostrar('Acesso bloqueado pelo servidor (403/401).', 'err');
+          if (resp.status >= 500) return mostrar('Servidor com problema (5xx). Tente novamente.', 'err');
+          return mostrar(`Erro no servidor (HTTP ${resp.status}).`, 'err');
+        }
+
+        let data;
+        try {
+          data = await resp.json();
+        } catch {
+          return mostrar('Resposta inválida do servidor (não veio JSON).', 'err');
+        }
+
+        if (!data || !data.sucesso) {
+          const serverMsg = (data && data.mensagem) ? String(data.mensagem) : '';
+
+          if (!serverMsg) {
+            return mostrar(MSG_NAO_CADASTRADO, 'err');
+          }
+
+          if (ehNaoCadastrado(serverMsg)) {
+            return mostrar(MSG_NAO_CADASTRADO, 'err');
+          }
+
+          return mostrar(serverMsg || MSG_NAO_CADASTRADO, 'err');
+        }
+
+        const linkRecebido = data.link ? String(data.link).trim() : '';
+        const temMaterial = data.materialDisponivel !== false && linkRecebido !== '';
+
+        mostrar('Acesso liberado. Responda a pesquisa para acessar o material.', 'ok');
+        abrirPopupPesquisa(linkRecebido, cnpj, temMaterial);
+
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          return mostrar('Demorou demais para responder. Tente novamente.', 'err');
+        }
+        return mostrar(MSG_ERRO_GENERICO, 'err');
+      } finally {
+        clearTimeout(timeoutId);
+        $btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
