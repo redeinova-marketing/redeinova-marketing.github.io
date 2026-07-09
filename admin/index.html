@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel Administrativo</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+  <section id="loginPage" class="login-page">
+    <div class="login-card">
+      <img src="../img/logo.png" alt="Logo Rede Inova" class="logo">
+
+      <h1>Painel Administrativo</h1>
+      <p>Materiais por licenciado</p>
+
+      <div class="form-group">
+        <label for="loginEmail">E-mail</label>
+        <input id="loginEmail" type="email" placeholder="Digite seu e-mail">
+      </div>
+
+      <div class="form-group">
+        <label for="loginSenha">Senha</label>
+
+        <div class="password-wrapper">
+          <input id="loginSenha" type="password" placeholder="Digite sua senha">
+
+          <button type="button" id="togglePassword" class="password-toggle" aria-label="Mostrar senha">
+            <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 3l18 18"></path>
+              <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42"></path>
+              <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+              <path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 8 10 8a10.8 10.8 0 0 0 5.39-1.39"></path>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <button id="btnLogin" type="button">Entrar</button>
+      <div id="loginMsg" class="msg"></div>
+    </div>
+  </section>
+
+  <section id="appPage" class="app hidden">
+
+    <aside class="sidebar">
+      <img src="../img/logo.png" alt="Logo Rede Inova" class="sidebar-logo">
+
+      <nav class="sidebar-nav">
+        <button id="btnLojas" class="nav-btn active" type="button">Lojas</button>
+        <button id="btnMeuPerfil" class="nav-btn" type="button">Meu Perfil</button>
+        <button id="btnSair" class="nav-btn" type="button">Sair</button>
+      </nav>
+    </aside>
+
+    <main class="main">
+
+      <header class="topbar">
+        <div>
+          <h2>Painel Administrativo</h2>
+          <p>Pesquise a loja pelo código e cadastre o link do material.</p>
+        </div>
+
+        <div class="user-box">
+          <div id="userAvatarFallback" class="user-avatar-fallback">U</div>
+
+          <div class="user-info">
+            <strong id="userName">Usuário</strong>
+            <span id="userEmail">email</span>
+          </div>
+        </div>
+      </header>
+
+      <section id="lojasSection" class="grid">
+
+        <div class="card">
+          <h3>Pesquisar loja</h3>
+          <p class="subtitle">Digite apenas o código da loja.</p>
+
+          <div class="search-row">
+            <div class="form-group">
+              <label for="codigoLoja">Código da loja</label>
+              <input id="codigoLoja" type="text" placeholder="Ex.: 9">
+            </div>
+
+            <button id="btnBuscar" type="button">Pesquisar</button>
+          </div>
+
+          <div id="buscaMsg" class="msg"></div>
+        </div>
+
+        <div id="resultadoCard" class="card hidden">
+          <h3>Dados da loja</h3>
+          <p class="subtitle">Confira os dados antes de salvar o link.</p>
+
+          <div id="statusMaterial" class="status-pill warn">
+            🟡 Nenhum material cadastrado
+          </div>
+
+          <div class="details-grid">
+            <div class="detail"><span>Código</span><strong id="detCodigo">-</strong></div>
+            <div class="detail"><span>CNPJ</span><strong id="detCnpj">-</strong></div>
+            <div class="detail"><span>Nome Fantasia</span><strong id="detNomeFantasia">-</strong></div>
+            <div class="detail"><span>Razão Social</span><strong id="detRazaoSocial">-</strong></div>
+            <div class="detail"><span>Telefone</span><strong id="detTelefone">-</strong></div>
+            <div class="detail"><span>E-mail</span><strong id="detEmail">-</strong></div>
+            <div class="detail"><span>Contato</span><strong id="detContato">-</strong></div>
+            <div class="detail"><span>Status</span><strong id="detStatus">-</strong></div>
+            <div class="detail"><span>Lojas Relacionadas</span><strong id="detRelacionadas">-</strong></div>
+          </div>
+
+          <div class="link-area">
+            <div class="form-group">
+              <label for="linkDrive">Link do Drive / Material</label>
+              <textarea id="linkDrive" placeholder="Cole aqui o link do Drive"></textarea>
+            </div>
+
+            <div class="actions">
+              <button id="btnSalvarLink" type="button">Salvar link</button>
+              <button id="btnAbrirLink" type="button" class="btn-secondary">Abrir material</button>
+            </div>
+
+            <div id="linkMsg" class="msg"></div>
+          </div>
+        </div>
+
+      </section>
+
+      <section id="perfilSection" class="hidden">
+        <div id="perfilCard" class="card profile-card">
+          <h3>Meu Perfil</h3>
+          <p class="subtitle">Atualize sua senha.</p>
+
+          <div class="form-group">
+            <label for="perfilNome">Nome</label>
+            <input id="perfilNome" type="text" disabled>
+          </div>
+
+          <div class="form-group">
+            <label for="perfilEmail">E-mail</label>
+            <input id="perfilEmail" type="text" disabled>
+          </div>
+
+          <div class="form-group">
+  <label for="perfilSenha">Nova senha</label>
+
+  <div class="password-wrapper">
+    <input id="perfilSenha" type="password" placeholder="Digite uma nova senha">
+
+    <button
+      type="button"
+      id="togglePerfilPassword"
+      class="password-toggle"
+      aria-label="Mostrar senha">
+
+      <svg
+        id="perfilEyeIcon"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="1.8"
+        stroke-linecap="round"
+        stroke-linejoin="round">
+
+        <path d="M3 3l18 18"></path>
+        <path d="M10.58 10.58A2 2 0 0 0 13.42 13.42"></path>
+        <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c7 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+        <path d="M6.61 6.61C3.98 8.38 2 12 2 12s3 8 10 8a10.8 10.8 0 0 0 5.39-1.39"></path>
+      </svg>
+
+    </button>
+  </div>
+</div>
+
+          <button id="btnSalvarPerfil" type="button">Salvar alterações</button>
+          <div id="perfilMsg" class="msg"></div>
+        </div>
+      </section>
+
+    </main>
+  </section>
+
+  <script src="script.js"></script>
+</body>
+</html>
