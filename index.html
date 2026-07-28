@@ -163,6 +163,24 @@
       filter: none;
     }
 
+    .btn-secundario{
+      display:block;
+      width:100%;
+      box-sizing:border-box;
+      margin-top:16px;
+      padding:16px 14px;
+      font-size:16px;
+      font-weight:700;
+      border-radius:12px;
+      text-align:center;
+      text-decoration:none;
+      background:transparent;
+      color:var(--text);
+      border:1px solid rgba(255,255,255,.25);
+    }
+
+    .btn-secundario:hover{ filter:brightness(1.15); }
+
     .msg{
       margin-top: 16px;
       font-weight: 700;
@@ -456,6 +474,23 @@
     </div>
   </div>
 
+  <div id="popupAviso" class="popup-overlay" aria-hidden="true">
+    <div class="popup-card">
+      <h2 id="avisoTitulo">Aviso</h2>
+      <p id="avisoTexto"></p>
+
+      <a id="avisoLink" class="btn-secundario" href="#" target="_blank" rel="noopener">
+        Ver mais
+      </a>
+
+      <button id="btnBaixarMaterial" type="button">
+        Baixar meu material
+      </button>
+
+      <div id="msgAviso" class="popup-msg"></div>
+    </div>
+  </div>
+
   <div id="paginaIndisponivel" class="pagina-indisponivel" aria-hidden="true">
     <div class="indisponivel-card">
       <img src="img/logo.png" alt="Logo Rede Inova" class="logo-indisponivel">
@@ -494,7 +529,13 @@
     const $paginaIndisponivel = document.getElementById('paginaIndisponivel');
     const $btnVoltarInicio = document.getElementById('btnVoltarInicio');
 
-    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwVq2pVKs6J9q-6dtbRO17UWDYyOZRrX477tjtUk8g-4-OGoV8HhQYDxbjTdA1NutmI/exec';
+    const $popupAviso = document.getElementById('popupAviso');
+    const $avisoTitulo = document.getElementById('avisoTitulo');
+    const $avisoTexto = document.getElementById('avisoTexto');
+    const $avisoLink = document.getElementById('avisoLink');
+    const $btnBaixarMaterial = document.getElementById('btnBaixarMaterial');
+
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEdJqwSt1ZjtuM0heFN7BNkDuyxKYsj5_k6R0edwhA4H18SSVoTHcLbKDWE7O_ZO9d/exec';
 
     const PESQUISA_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxuTGfd30dCI410zoMlNCA9gaGdKpuk8OfIYvR3S3RJUd4-FEclLr6qb2Ql5_wq_DpX/exec';
 
@@ -562,6 +603,32 @@
     }
 
     function fecharPesquisaERedirecionar(){
+      redirecionarOuAvisarMaterial();
+    }
+
+    function abrirPopupAviso(intercept, linkDrive, materialLiberado){
+      linkDrivePendente = linkDrive || '';
+      materialDisponivel = Boolean(materialLiberado && linkDrivePendente);
+
+      $avisoTitulo.textContent = (intercept && intercept.titulo) ? intercept.titulo : 'Aviso';
+      $avisoTexto.textContent = (intercept && intercept.texto) ? intercept.texto : '';
+
+      const linkAviso = (intercept && intercept.link) ? String(intercept.link).trim() : '';
+      if (linkAviso) {
+        $avisoLink.href = linkAviso;
+        $avisoLink.textContent = (intercept && intercept.textoLink) ? intercept.textoLink : 'Ver mais';
+        $avisoLink.style.display = '';
+      } else {
+        $avisoLink.style.display = 'none';
+      }
+
+      $popupAviso.classList.add('ativo');
+      $popupAviso.setAttribute('aria-hidden', 'false');
+    }
+
+    function fecharAvisoERedirecionar(){
+      $popupAviso.classList.remove('ativo');
+      $popupAviso.setAttribute('aria-hidden', 'true');
       redirecionarOuAvisarMaterial();
     }
 
@@ -666,6 +733,7 @@
 
     $btnFinalizarPesquisa.addEventListener('click', enviarPesquisa);
     $btnFecharPesquisa.addEventListener('click', fecharPesquisaERedirecionar);
+    $btnBaixarMaterial.addEventListener('click', fecharAvisoERedirecionar);
 
     $btn.addEventListener('click', async () => {
       const cnpj = limparNumeros($cnpj.value);
@@ -716,8 +784,16 @@
         const linkRecebido = data.link ? String(data.link).trim() : '';
         const temMaterial = data.materialDisponivel !== false && linkRecebido !== '';
 
-        mostrar('Acesso liberado. Responda a pesquisa para acessar o material.', 'ok');
-        abrirPopupPesquisa(linkRecebido, cnpj, temMaterial);
+        const intercept = (data && data.intercept) ? data.intercept : null;
+        const modoIntercept = (intercept && String(intercept.modo || '').toLowerCase() === 'aviso') ? 'aviso' : 'csat';
+
+        if (modoIntercept === 'aviso') {
+          mostrar('Acesso liberado.', 'ok');
+          abrirPopupAviso(intercept, linkRecebido, temMaterial);
+        } else {
+          mostrar('Acesso liberado. Responda a pesquisa para acessar o material.', 'ok');
+          abrirPopupPesquisa(linkRecebido, cnpj, temMaterial);
+        }
 
       } catch (err) {
         if (err && err.name === 'AbortError') {
