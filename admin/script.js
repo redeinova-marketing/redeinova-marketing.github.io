@@ -1,4 +1,4 @@
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwVq2pVKs6J9q-6dtbRO17UWDYyOZRrX477tjtUk8g-4-OGoV8HhQYDxbjTdA1NutmI/exec";
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEdJqwSt1ZjtuM0heFN7BNkDuyxKYsj5_k6R0edwhA4H18SSVoTHcLbKDWE7O_ZO9d/exec";
 
 let usuarioLogado = null;
 let senhaLogada = "";
