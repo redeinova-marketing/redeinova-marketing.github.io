@@ -9,13 +9,14 @@
     * { box-sizing: border-box; }
 
     :root{
-      --bg:#0e1220;
-      --text:#eaeaf0;
-      --muted:#cdd3ff;
-      --card:#161a2b;
-      --border:#d7dbe0;
-      --primary:#4d7cff;
-      --shadow: 0 18px 50px rgba(0,0,0,.45);
+      --bg:#fbf1ee;
+      --text:#5e3a3a;
+      --muted:#8a6a68;
+      --card:#ffffff;
+      --border:#f2d3d1;
+      --primary:#c8484a;
+      --primary-dark:#a83a3e;
+      --shadow: 0 20px 50px rgba(90,30,30,.14);
       --radius: 18px;
     }
 
@@ -23,7 +24,7 @@
       font-family: Arial, sans-serif;
       margin:0;
       color: var(--text);
-      background: radial-gradient(circle at top, rgba(47,67,120,.38), transparent 38%), var(--bg);
+      background: radial-gradient(circle at top, rgba(200,72,74,.12), transparent 45%), var(--bg);
     }
 
     .wrap{
@@ -58,7 +59,8 @@
       border-radius: var(--radius);
       padding: 32px;
       box-shadow: var(--shadow);
-      border: 1px solid rgba(0,0,0,.04);
+      border: 1px solid var(--border);
+      border-top: 6px solid var(--primary);
     }
 
     .title{
@@ -83,6 +85,7 @@
       line-height: 1.1;
       margin:0;
       letter-spacing: -0.2px;
+      color: var(--primary-dark);
     }
 
     p{
@@ -114,7 +117,7 @@
       border-radius: 12px;
       outline:none;
       background:#fff;
-      color:#111;
+      color:#3d2a2a;
       font-family: Arial, sans-serif;
     }
 
@@ -126,13 +129,13 @@
 
     input::placeholder,
     textarea::placeholder{
-      color:#777;
+      color:#b09a98;
     }
 
     input:focus,
     textarea:focus{
-      border-color:#6aa5ff;
-      box-shadow:0 0 0 4px rgba(106,165,255,.22);
+      border-color:#e08a88;
+      box-shadow:0 0 0 4px rgba(224,138,136,.2);
     }
 
     button{
@@ -144,7 +147,7 @@
       border:0;
       border-radius: 12px;
       cursor:pointer;
-      background: var(--primary);
+      background: linear-gradient(135deg, #d9595a, #b9403f);
       color:#fff;
       transition: transform .04s ease, opacity .2s ease, filter .2s ease;
     }
@@ -188,13 +191,22 @@
       text-align:center;
     }
 
-    .ok{ color:#4ade80; }
-    .err{ color:#f87171; }
+    .ok{ color:#2f8a55; }
+    .err{ color:#c0392b; }
 
+    /* ===== Pesquisa de satisfação (tema claro e aconchegante) ===== */
     .popup-overlay{
+      --p-red: #c8484a;
+      --p-red-dark: #a83a3e;
+      --p-red-soft: #fdeeed;
+      --p-red-line: #f2d3d1;
+      --p-text: #5e3a3a;
+      --p-muted: #8a6a68;
+
       position: fixed;
       inset: 0;
-      background: rgba(0,0,0,.72);
+      background: rgba(40, 18, 18, .55);
+      backdrop-filter: blur(3px);
       display: none;
       align-items: center;
       justify-content: center;
@@ -206,48 +218,58 @@
       display: flex;
     }
 
-    .popup-card{
+    .popup-shell{
+      position: relative;
       width: min(540px, 100%);
+      animation: popupEntrar .35s ease-out;
+    }
+
+    .popup-card{
       max-height: 92vh;
       overflow-y: auto;
-      background: var(--card);
-      color: var(--text);
-      border-radius: var(--radius);
-      padding: 30px;
-      box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,.08);
-      position: relative;
+      background: linear-gradient(180deg, #fff6f3 0%, #ffffff 140px);
+      color: var(--p-text);
+      border-radius: 22px;
+      padding: 32px 30px 26px;
+      box-shadow: 0 24px 60px rgba(90, 30, 30, .28);
+      border: 1px solid var(--p-red-line);
+      border-top: 6px solid var(--p-red);
     }
 
     .popup-close{
       position: absolute;
-      top: 12px;
+      top: 16px;
       right: 16px;
-      width: auto;
+      z-index: 2;
+      width: 36px;
+      height: 36px;
       margin: 0;
       padding: 0;
-      background: transparent;
-      color: #fff;
+      background: var(--p-red-soft);
+      color: var(--p-red);
       border: 0;
-      font-size: 30px;
-      line-height: 1;
+      border-radius: 50%;
+      font-size: 24px;
+      line-height: 36px;
       cursor: pointer;
     }
 
     .popup-close:hover{
-      filter: brightness(1.2);
+      filter: none;
+      background: #fbdcda;
     }
 
     .popup-card h2{
-      margin: 0 0 10px;
+      margin: 0 0 8px;
       font-size: 24px;
       line-height: 1.2;
       text-align: center;
+      color: var(--p-red-dark);
     }
 
     .popup-card p{
-      margin: 0 0 18px;
-      color: var(--muted);
+      margin: 0 0 20px;
+      color: var(--p-muted);
       font-size: 15px;
       line-height: 1.5;
       text-align: center;
@@ -263,25 +285,39 @@
     .popup-field label{
       font-size: 13px;
       font-weight: 700;
-      color: var(--text);
+      color: var(--p-red-dark);
     }
 
-    .popup-field input{
+    .popup-field input,
+    .popup-field textarea{
       font-size: 15px;
       padding: 13px 14px;
+      color: #3d2a2a;
+      border-color: var(--p-red-line);
+    }
+
+    .popup-field input:focus,
+    .popup-field textarea:focus{
+      border-color: #e08a88;
+      box-shadow: 0 0 0 4px rgba(224, 138, 136, .2);
+    }
+
+    .popup-field input::placeholder,
+    .popup-field textarea::placeholder{
+      color: #b09a98;
     }
 
     .popup-field input[readonly]{
-      background:#eef1f7;
-      color:#333;
-      cursor:not-allowed;
+      background: #fbf3f2;
+      color: var(--p-muted);
+      cursor: not-allowed;
     }
 
     .avaliacao-opcoes{
       display: grid;
       grid-template-columns: 1fr;
       gap: 8px;
-      margin-bottom: 14px;
+      margin-bottom: 6px;
     }
 
     .avaliacao-btn{
@@ -290,15 +326,30 @@
       padding: 12px;
       font-size: 14px;
       border-radius: 12px;
-      background: #242b44;
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.12);
+      background: #fff;
+      color: var(--p-text);
+      border: 1px solid var(--p-red-line);
       cursor: pointer;
+      transition: background .2s ease, border-color .2s ease, color .2s ease, transform .04s ease;
+    }
+
+    .avaliacao-btn:hover{
+      filter: none;
+      background: var(--p-red-soft);
+      border-color: #e9b7b4;
     }
 
     .avaliacao-btn.selecionado{
-      background: var(--primary);
-      border-color: var(--primary);
+      background: var(--p-red);
+      border-color: var(--p-red);
+      color: #fff;
+      box-shadow: 0 6px 16px rgba(200, 72, 74, .25);
+    }
+
+    #btnFinalizarPesquisa{
+      margin-top: 8px;
+      background: linear-gradient(135deg, #d9595a, #b9403f);
+      box-shadow: 0 10px 22px rgba(185, 64, 63, .28);
     }
 
     .popup-msg{
@@ -310,11 +361,210 @@
     }
 
     .popup-msg.ok{
-      color: #4ade80;
+      color: #2f8a55;
     }
 
     .popup-msg.err{
-      color: #f87171;
+      color: #c0392b;
+    }
+
+    /* ===== Gigi chorando: aparece em cima do X ===== */
+    .gigi-triste{
+      position: absolute;
+      top: -34px;
+      right: -14px;
+      z-index: 5;
+      width: 150px;
+      display: none;
+      cursor: default;
+    }
+
+    .gigi-triste.visivel{
+      display: block;
+      animation: gigiSurgir .35s cubic-bezier(.2, 1.4, .5, 1);
+    }
+
+    .gigi-triste img{
+      display: block;
+      width: 100%;
+      height: auto;
+      filter: drop-shadow(0 10px 18px rgba(90, 30, 30, .3));
+      animation: gigiSoluco .6s ease-in-out .35s infinite;
+      transform-origin: 50% 100%;
+    }
+
+    .gigi-balao{
+      position: absolute;
+      top: 34px;
+      right: calc(100% - 6px);
+      width: 230px;
+      padding: 14px 16px;
+      background: #fff;
+      color: var(--p-text);
+      border: 2px solid var(--p-red);
+      border-radius: 16px;
+      box-shadow: 0 12px 28px rgba(90, 30, 30, .22);
+      font-size: 14px;
+      line-height: 1.4;
+      text-align: left;
+    }
+
+    .gigi-balao::after{
+      content: "";
+      position: absolute;
+      top: 26px;
+      right: -10px;
+      width: 16px;
+      height: 16px;
+      background: #fff;
+      border-top: 2px solid var(--p-red);
+      border-right: 2px solid var(--p-red);
+      transform: rotate(45deg);
+    }
+
+    .gigi-balao strong{
+      display: block;
+      margin-bottom: 4px;
+      color: var(--p-red-dark);
+      font-size: 15px;
+    }
+
+    .gigi-sair{
+      width: auto;
+      margin: 8px 0 0;
+      padding: 0;
+      background: none;
+      border: 0;
+      color: #a99390;
+      font-size: 11px;
+      font-weight: 400;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    .gigi-sair:hover{
+      filter: none;
+      color: var(--p-muted);
+    }
+
+    /* ===== Tela de agradecimento ===== */
+    .pesquisa-obrigado{
+      position: relative;
+      text-align: center;
+      padding: 8px 0 4px;
+    }
+
+    .pesquisa-obrigado img{
+      width: 190px;
+      max-width: 60%;
+      height: auto;
+      display: block;
+      margin: 0 auto 10px;
+      filter: drop-shadow(0 12px 20px rgba(90, 30, 30, .22));
+      animation: gigiPular .6s cubic-bezier(.2, 1.4, .5, 1);
+    }
+
+    .pesquisa-obrigado h2{
+      font-size: 26px;
+    }
+
+    .obrigado-progresso{
+      height: 6px;
+      margin: 6px auto 8px;
+      width: 70%;
+      border-radius: 99px;
+      background: var(--p-red-soft);
+      overflow: hidden;
+    }
+
+    .obrigado-progresso span{
+      display: block;
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #e27b7a, var(--p-red));
+      border-radius: inherit;
+    }
+
+    .obrigado-progresso.andando span{
+      width: 100%;
+      transition: width var(--tempo-redirect, 4s) linear;
+    }
+
+    .obrigado-rodape{
+      margin: 0 !important;
+      font-size: 13px !important;
+    }
+
+    .coracao{
+      position: absolute;
+      bottom: 40%;
+      font-size: 20px;
+      color: var(--p-red);
+      opacity: 0;
+      pointer-events: none;
+      animation: coracaoSubir 2.4s ease-out forwards;
+    }
+
+    .popup-shell.concluida .popup-close,
+    .popup-shell.concluida .gigi-triste{
+      display: none;
+    }
+
+    /* Popup de aviso (usa o mesmo card claro, sem a Gigi) */
+    .popup-overlay > .popup-card{
+      width: min(540px, 100%);
+    }
+
+    #btnBaixarMaterial{
+      background: linear-gradient(135deg, #d9595a, #b9403f);
+      box-shadow: 0 10px 22px rgba(185, 64, 63, .28);
+    }
+
+    .popup-card .btn-secundario{
+      color: var(--p-red-dark);
+      border-color: var(--p-red-line);
+    }
+
+    .popup-card .btn-secundario:hover{
+      filter: none;
+      background: var(--p-red-soft);
+    }
+
+    @keyframes popupEntrar{
+      from{ opacity: 0; transform: translateY(14px) scale(.98); }
+      to{ opacity: 1; transform: none; }
+    }
+
+    @keyframes gigiSurgir{
+      from{ opacity: 0; transform: translateY(30px) scale(.6); }
+      to{ opacity: 1; transform: none; }
+    }
+
+    @keyframes gigiSoluco{
+      0%, 100%{ transform: rotate(-2deg) scaleY(1); }
+      50%{ transform: rotate(2deg) scaleY(.97); }
+    }
+
+    @keyframes gigiPular{
+      from{ opacity: 0; transform: translateY(24px) scale(.7); }
+      to{ opacity: 1; transform: none; }
+    }
+
+    @keyframes coracaoSubir{
+      0%{ opacity: 0; transform: translateY(0) scale(.6); }
+      15%{ opacity: 1; }
+      100%{ opacity: 0; transform: translateY(-180px) scale(1.2); }
+    }
+
+    @media (max-width: 480px){
+      .popup-card{ padding: 28px 18px 22px; }
+      .gigi-triste{ width: 118px; top: -22px; right: -6px; }
+      .gigi-balao{ width: 180px; top: 20px; font-size: 13px; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .popup-shell, .gigi-triste.visivel, .gigi-triste img,
+      .pesquisa-obrigado img, .coracao{ animation: none; }
     }
 
     .pagina-indisponivel{
@@ -324,7 +574,7 @@
       align-items: center;
       justify-content: center;
       padding: 24px;
-      background: radial-gradient(circle at top, rgba(47,67,120,.38), transparent 38%), var(--bg);
+      background: radial-gradient(circle at top, rgba(200,72,74,.12), transparent 45%), var(--bg);
       z-index: 10000;
     }
 
@@ -339,7 +589,8 @@
       padding: 42px 32px;
       text-align: center;
       box-shadow: var(--shadow);
-      border: 1px solid rgba(255,255,255,.08);
+      border: 1px solid var(--border);
+      border-top: 6px solid var(--primary);
     }
 
     .logo-indisponivel{
@@ -359,7 +610,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255,255,255,.08);
+      background: #fdeeed;
       font-size: 56px;
     }
 
@@ -367,7 +618,7 @@
       margin: 0 0 16px;
       font-size: 30px;
       line-height: 1.2;
-      color: var(--text);
+      color: var(--primary-dark);
     }
 
     .indisponivel-card p{
@@ -418,9 +669,21 @@
   </div>
 
   <div id="popupPesquisa" class="popup-overlay" aria-hidden="true">
-    <div class="popup-card">
-      <button id="btnFecharPesquisa" class="popup-close" type="button" aria-label="Fechar pesquisa">×</button>
+    <div id="popupShell" class="popup-shell">
+    <button id="btnFecharPesquisa" class="popup-close" type="button" aria-label="Fechar pesquisa">×</button>
 
+    <div id="gigiTriste" class="gigi-triste" aria-live="polite">
+      <div class="gigi-balao">
+        <strong>Nããão, não vai embora! 😭</strong>
+        Responde a pesquisa pra Gigi, por favor? Leva menos de 1 minutinho!
+        <br>
+        <button id="btnSairMesmo" class="gigi-sair" type="button">sair mesmo assim</button>
+      </div>
+      <img src="img/gigi-chorando.png" alt="Gigi, a girafa mascote, chorando">
+    </div>
+
+    <div class="popup-card">
+      <div id="pesquisaConteudo">
       <h2>Pesquisa de satisfação</h2>
 
       <p>
@@ -471,6 +734,19 @@
       </button>
 
       <div id="msgPesquisa" class="popup-msg"></div>
+      </div>
+
+      <div id="pesquisaObrigado" class="pesquisa-obrigado" hidden>
+        <img src="img/gigi-coracao.png" alt="Gigi, a girafa mascote, fazendo coração com as mãos">
+        <h2 id="obrigadoTitulo">Você é demais! ❤️</h2>
+        <p>
+          A Gigi agradece de coração pela sua avaliação.
+          Ela ajuda a gente a melhorar o atendimento cada vez mais.
+        </p>
+        <div id="obrigadoProgresso" class="obrigado-progresso"><span></span></div>
+        <p id="obrigadoRodape" class="obrigado-rodape">Abrindo o material...</p>
+      </div>
+    </div>
     </div>
   </div>
 
@@ -528,6 +804,16 @@
     const $avaliacaoBtns = document.querySelectorAll('.avaliacao-btn');
     const $paginaIndisponivel = document.getElementById('paginaIndisponivel');
     const $btnVoltarInicio = document.getElementById('btnVoltarInicio');
+    const $popupShell = document.getElementById('popupShell');
+    const $gigiTriste = document.getElementById('gigiTriste');
+    const $btnSairMesmo = document.getElementById('btnSairMesmo');
+    const $pesquisaConteudo = document.getElementById('pesquisaConteudo');
+    const $pesquisaObrigado = document.getElementById('pesquisaObrigado');
+    const $obrigadoTitulo = document.getElementById('obrigadoTitulo');
+    const $obrigadoProgresso = document.getElementById('obrigadoProgresso');
+    const $obrigadoRodape = document.getElementById('obrigadoRodape');
+
+    const TEMPO_AGRADECIMENTO_MS = 4000;
 
     const $popupAviso = document.getElementById('popupAviso');
     const $avisoTitulo = document.getElementById('avisoTitulo');
@@ -573,6 +859,12 @@
       mostrarPesquisa('', '');
 
       $avaliacaoBtns.forEach(btn => btn.classList.remove('selecionado'));
+
+      esconderGigi();
+      $popupShell.classList.remove('concluida');
+      $pesquisaConteudo.hidden = false;
+      $pesquisaObrigado.hidden = true;
+      $obrigadoProgresso.classList.remove('andando');
 
       $popupPesquisa.classList.add('ativo');
       $popupPesquisa.setAttribute('aria-hidden', 'false');
@@ -630,6 +922,89 @@
       $popupAviso.classList.remove('ativo');
       $popupAviso.setAttribute('aria-hidden', 'true');
       redirecionarOuAvisarMaterial();
+    }
+
+    // Gigi chorando: surge em cima do X e fica cobrindo o botão enquanto o mouse estiver nela.
+    let timerEsconderGigi = null;
+
+    function mostrarGigi(){
+      clearTimeout(timerEsconderGigi);
+      $gigiTriste.classList.add('visivel');
+    }
+
+    function esconderGigi(){
+      clearTimeout(timerEsconderGigi);
+      $gigiTriste.classList.remove('visivel');
+    }
+
+    function agendarEsconderGigi(){
+      clearTimeout(timerEsconderGigi);
+      timerEsconderGigi = setTimeout(esconderGigi, 700);
+    }
+
+    $btnFecharPesquisa.addEventListener('mouseenter', mostrarGigi);
+    $gigiTriste.addEventListener('mouseenter', mostrarGigi);
+    $gigiTriste.addEventListener('mouseleave', agendarEsconderGigi);
+
+    // No celular não existe "passar o mouse": o toque no X mostra a Gigi em vez de sair.
+    $btnFecharPesquisa.addEventListener('click', mostrarGigi);
+
+    // Toque/clique fora da Gigi (ex.: voltar a preencher o formulário) faz ela sumir.
+    $popupPesquisa.addEventListener('click', (e) => {
+      if (!$gigiTriste.classList.contains('visivel')) return;
+      if ($gigiTriste.contains(e.target) || $btnFecharPesquisa.contains(e.target)) return;
+      esconderGigi();
+    });
+
+    function soltarCoracoes(){
+      for (let i = 0; i < 10; i++) {
+        const c = document.createElement('span');
+        c.className = 'coracao';
+        c.textContent = '❤';
+        c.style.left = (10 + Math.random() * 80) + '%';
+        c.style.fontSize = (14 + Math.random() * 14) + 'px';
+        c.style.animationDelay = (Math.random() * 0.9) + 's';
+        $pesquisaObrigado.appendChild(c);
+      }
+    }
+
+    function mostrarAgradecimento(responsavel){
+      const primeiroNome = responsavel.split(/\s+/)[0];
+      $obrigadoTitulo.textContent = primeiroNome
+        ? `Você é demais, ${primeiroNome}! ❤️`
+        : 'Você é demais! ❤️';
+      $obrigadoRodape.textContent = materialDisponivel ? 'Abrindo o material...' : 'Só um instante...';
+
+      esconderGigi();
+      $popupShell.classList.add('concluida');
+      $pesquisaConteudo.hidden = true;
+      $pesquisaObrigado.hidden = false;
+      soltarCoracoes();
+
+      $obrigadoProgresso.style.setProperty('--tempo-redirect', TEMPO_AGRADECIMENTO_MS + 'ms');
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        $obrigadoProgresso.classList.add('andando');
+      }));
+    }
+
+    // O Apps Script às vezes devolve 404/5xx de forma intermitente; tenta de novo antes de mostrar erro.
+    async function buscarComRetentativa(url, opcoes, tentativas = 3){
+      for (let i = 1; i <= tentativas; i++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+
+        try {
+          const resp = await fetch(url, { ...opcoes, signal: controller.signal });
+          const falhaTemporaria = resp.status === 404 || resp.status >= 500;
+          if (!falhaTemporaria || i === tentativas) return resp;
+        } catch (err) {
+          if (i === tentativas) throw err;
+        } finally {
+          clearTimeout(timeoutId);
+        }
+
+        await new Promise(r => setTimeout(r, 800 * i));
+      }
     }
 
     function ehNaoCadastrado(msg){
@@ -715,7 +1090,10 @@
 
         enviouComSucesso = true;
 
-        redirecionarOuAvisarMaterial();
+        mostrarPesquisa('', '');
+        mostrarAgradecimento(responsavel);
+
+        setTimeout(redirecionarOuAvisarMaterial, TEMPO_AGRADECIMENTO_MS);
 
       } catch (err) {
         return mostrarPesquisa('Erro ao enviar a pesquisa. Tente novamente.', 'err');
@@ -732,7 +1110,7 @@
     });
 
     $btnFinalizarPesquisa.addEventListener('click', enviarPesquisa);
-    $btnFecharPesquisa.addEventListener('click', fecharPesquisaERedirecionar);
+    $btnSairMesmo.addEventListener('click', fecharPesquisaERedirecionar);
     $btnBaixarMaterial.addEventListener('click', fecharAvisoERedirecionar);
 
     $btn.addEventListener('click', async () => {
@@ -744,13 +1122,9 @@
       mostrar('Validando...', 'ok');
       $btn.disabled = true;
 
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
-
       try {
-        const resp = await fetch(`${APP_SCRIPT_URL}?cnpj=${encodeURIComponent(cnpj)}`, {
-          method: 'GET',
-          signal: controller.signal
+        const resp = await buscarComRetentativa(`${APP_SCRIPT_URL}?cnpj=${encodeURIComponent(cnpj)}`, {
+          method: 'GET'
         });
 
         if (!resp.ok) {
@@ -801,7 +1175,6 @@
         }
         return mostrar(MSG_ERRO_GENERICO, 'err');
       } finally {
-        clearTimeout(timeoutId);
         $btn.disabled = false;
       }
     });
