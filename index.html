@@ -447,6 +447,48 @@
       color: var(--p-muted);
     }
 
+    /* ===== Perguntas extras (terceiros) ===== */
+    .pesquisa-extra{
+      text-align: center;
+      padding: 4px 0 2px;
+    }
+
+    .extra-etapa{
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 5px 12px;
+      border-radius: 99px;
+      background: var(--p-red-soft);
+      color: var(--p-red-dark);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pesquisa-extra h2{
+      font-size: 21px;
+      padding: 0 22px;
+      margin-bottom: 20px;
+    }
+
+    .extra-opcoes{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .extra-opcoes.duas{
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .extra-opcoes .avaliacao-btn{
+      padding: 15px 12px;
+      font-size: 15px;
+    }
+
+    .extra-opcoes .avaliacao-btn:disabled{
+      cursor: default;
+    }
+
     /* ===== Tela de agradecimento ===== */
     .pesquisa-obrigado{
       position: relative;
@@ -736,6 +778,27 @@
       <div id="msgPesquisa" class="popup-msg"></div>
       </div>
 
+      <div id="pesquisaTerceiros" class="pesquisa-extra" hidden>
+        <div id="terceirosPasso1">
+          <span class="extra-etapa">Só mais uma perguntinha 😊</span>
+          <h2>Sua loja paga alguém de fora (freelancer, agência, designer) para fazer artes ou cuidar das redes sociais?</h2>
+          <div class="extra-opcoes duas">
+            <button type="button" class="avaliacao-btn paga-btn" data-paga="Não">Não</button>
+            <button type="button" class="avaliacao-btn paga-btn" data-paga="Sim">Sim</button>
+          </div>
+        </div>
+
+        <div id="terceirosPasso2" hidden>
+          <span class="extra-etapa">Última pergunta</span>
+          <h2>Quanto por mês, mais ou menos?</h2>
+          <div class="extra-opcoes">
+            <button type="button" class="avaliacao-btn valor-btn" data-valor="Até R$ 500">Até R$ 500</button>
+            <button type="button" class="avaliacao-btn valor-btn" data-valor="R$ 500 a R$ 1.000">R$ 500 a R$ 1.000</button>
+            <button type="button" class="avaliacao-btn valor-btn" data-valor="Acima de R$ 1.000">Acima de R$ 1.000</button>
+          </div>
+        </div>
+      </div>
+
       <div id="pesquisaObrigado" class="pesquisa-obrigado" hidden>
         <img src="img/gigi-coracao.png" alt="Gigi, a girafa mascote, fazendo coração com as mãos">
         <h2 id="obrigadoTitulo">Você é demais! ❤️</h2>
@@ -811,6 +874,11 @@
     const $pesquisaObrigado = document.getElementById('pesquisaObrigado');
     const $obrigadoTitulo = document.getElementById('obrigadoTitulo');
     const $obrigadoProgresso = document.getElementById('obrigadoProgresso');
+    const $pesquisaTerceiros = document.getElementById('pesquisaTerceiros');
+    const $terceirosPasso1 = document.getElementById('terceirosPasso1');
+    const $terceirosPasso2 = document.getElementById('terceirosPasso2');
+    const $pagaBtns = document.querySelectorAll('.paga-btn');
+    const $valorBtns = document.querySelectorAll('.valor-btn');
     const $obrigadoRodape = document.getElementById('obrigadoRodape');
 
     const TEMPO_AGRADECIMENTO_MS = 4000;
@@ -864,6 +932,12 @@
       $popupShell.classList.remove('concluida');
       $pesquisaConteudo.hidden = false;
       $pesquisaObrigado.hidden = true;
+      $pesquisaTerceiros.hidden = true;
+      $popupShell.classList.remove('extras');
+      $pesquisaTerceiros.querySelectorAll('button').forEach(b => {
+        b.disabled = false;
+        b.classList.remove('selecionado');
+      });
       $obrigadoProgresso.classList.remove('andando');
 
       $popupPesquisa.classList.add('ativo');
@@ -928,6 +1002,7 @@
     let timerEsconderGigi = null;
 
     function mostrarGigi(){
+      if ($popupShell.classList.contains('extras')) return;
       clearTimeout(timerEsconderGigi);
       $gigiTriste.classList.add('visivel');
     }
@@ -978,6 +1053,8 @@
       esconderGigi();
       $popupShell.classList.add('concluida');
       $pesquisaConteudo.hidden = true;
+      $pesquisaTerceiros.hidden = true;
+      $popupShell.classList.remove('extras');
       $pesquisaObrigado.hidden = false;
       soltarCoracoes();
 
@@ -1091,9 +1168,12 @@
         enviouComSucesso = true;
 
         mostrarPesquisa('', '');
-        mostrarAgradecimento(responsavel);
 
-        setTimeout(redirecionarOuAvisarMaterial, TEMPO_AGRADECIMENTO_MS);
+        if (dataPesquisa.jaRespondeuTerceiros === false) {
+          mostrarPerguntasTerceiros(responsavel);
+        } else {
+          agradecerEIrParaMaterial(responsavel);
+        }
 
       } catch (err) {
         return mostrarPesquisa('Erro ao enviar a pesquisa. Tente novamente.', 'err');
@@ -1107,6 +1187,80 @@
 
     $btnVoltarInicio.addEventListener('click', () => {
       window.location.reload();
+    });
+
+    // Perguntas extras (uma vez por loja): o Apps Script da pesquisa avisa se o CNPJ ainda não respondeu.
+    let responsavelAtual = '';
+
+    function esperar(ms){
+      return new Promise(r => setTimeout(r, ms));
+    }
+
+    function irParaMaterial(){
+      fecharPesquisaERedirecionar();
+    }
+
+    function agradecerEIrParaMaterial(responsavel, envio){
+      mostrarAgradecimento(responsavel);
+      Promise.all([esperar(TEMPO_AGRADECIMENTO_MS), envio]).then(irParaMaterial);
+    }
+
+    function mostrarPerguntasTerceiros(responsavel){
+      responsavelAtual = responsavel;
+      esconderGigi();
+      $popupShell.classList.add('extras');
+      $pesquisaConteudo.hidden = true;
+      $pesquisaTerceiros.hidden = false;
+      $terceirosPasso1.hidden = false;
+      $terceirosPasso2.hidden = true;
+      $popupShell.querySelector('.popup-card').scrollTop = 0;
+    }
+
+    async function salvarTerceiros(pagaTerceiros, valorMensal){
+      try {
+        await buscarComRetentativa(PESQUISA_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          keepalive: true,
+          body: JSON.stringify({
+            action: 'pesquisa_terceiros',
+            cnpj: limparNumeros($pesquisaCnpj.value),
+            pagaTerceiros: pagaTerceiros,
+            valorMensal: valorMensal
+          })
+        }, 2);
+      } catch (_) {
+        // Se não conseguir salvar, a loja segue para o material do mesmo jeito.
+      }
+    }
+
+    function responderTerceiros(botao, pagaTerceiros, valorMensal){
+      botao.classList.add('selecionado');
+      $pesquisaTerceiros.querySelectorAll('button').forEach(b => b.disabled = true);
+
+      const envio = Promise.race([salvarTerceiros(pagaTerceiros, valorMensal), esperar(8000)]);
+      agradecerEIrParaMaterial(responsavelAtual, envio);
+    }
+
+    $pagaBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (btn.dataset.paga === 'Sim') {
+          $terceirosPasso1.hidden = true;
+          $terceirosPasso2.hidden = false;
+          return;
+        }
+
+        responderTerceiros(btn, 'Não', '');
+      });
+    });
+
+    $valorBtns.forEach(btn => {
+      btn.addEventListener('click', () => responderTerceiros(btn, 'Sim', btn.dataset.valor));
+    });
+
+    // Nas perguntas extras o X não chama a Gigi: a pesquisa já foi respondida, então leva direto ao material.
+    $btnFecharPesquisa.addEventListener('click', () => {
+      if ($popupShell.classList.contains('extras')) irParaMaterial();
     });
 
     $btnFinalizarPesquisa.addEventListener('click', enviarPesquisa);
