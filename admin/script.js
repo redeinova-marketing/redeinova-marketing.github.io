@@ -16,20 +16,33 @@ function mostrarMsg(id, texto, tipo) {
   el.className = "msg " + (tipo === "ok" ? "ok" : "err");
 }
 
-async function chamarAPI(params) {
+// O servidor do Google às vezes devolve 404/5xx ou demora demais: tenta de novo antes de desistir.
+async function chamarAPI(params, tentativas = 3) {
   const url = new URL(APP_SCRIPT_URL);
 
   Object.keys(params).forEach(chave => {
     url.searchParams.append(chave, params[chave]);
   });
 
-  const resposta = await fetch(url.toString(), { method: "GET" });
+  for (let i = 1; i <= tentativas; i++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-  if (!resposta.ok) {
-    throw new Error("Erro HTTP " + resposta.status);
+    try {
+      const resposta = await fetch(url.toString(), { method: "GET", signal: controller.signal });
+
+      if (resposta.ok) return await resposta.json();
+
+      const falhaTemporaria = resposta.status === 404 || resposta.status >= 500;
+      if (!falhaTemporaria || i === tentativas) throw new Error("Erro HTTP " + resposta.status);
+    } catch (erro) {
+      if (i === tentativas) throw erro;
+    } finally {
+      clearTimeout(timeoutId);
+    }
+
+    await new Promise(r => setTimeout(r, 800 * i));
   }
-
-  return resposta.json();
 }
 
 function salvarSessao(email, senha, usuario) {
@@ -244,14 +257,27 @@ async function salvarLink() {
       return mostrarMsg("linkMsg", data.mensagem || "Não foi possível salvar o link.", "err");
     }
 
-    lojaAtual.link = link;
-    lojaAtual.materialDisponivel = true;
+    // Confere na planilha se o link ficou gravado de verdade antes de avisar que deu certo.
+    mostrarMsg("linkMsg", "Conferindo na planilha...", "ok");
+
+    const conferencia = await chamarAPI({
+      action: "buscarLojaAdmin",
+      busca: lojaAtual.codigo
+    });
+
+    const linkGravado = conferencia && conferencia.loja ? String(conferencia.loja.link || "").trim() : "";
+
+    if (linkGravado !== link) {
+      return mostrarMsg("linkMsg", "⚠️ O link NÃO foi salvo na planilha. Clique em Salvar link de novo.", "err");
+    }
+
+    lojaAtual = conferencia.loja;
     preencherLoja(lojaAtual);
 
-    mostrarMsg("linkMsg", "Link atualizado com sucesso.", "ok");
+    mostrarMsg("linkMsg", "✅ Link salvo e conferido na planilha.", "ok");
 
   } catch (erro) {
-    mostrarMsg("linkMsg", "Erro ao salvar link. Tente novamente.", "err");
+    mostrarMsg("linkMsg", "⚠️ O link NÃO foi salvo (servidor não respondeu). Clique em Salvar link de novo.", "err");
   } finally {
     $("btnSalvarLink").disabled = false;
     $("btnSalvarLink").textContent = "Salvar link";
