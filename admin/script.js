@@ -16,7 +16,7 @@ function mostrarMsg(id, texto, tipo) {
   el.className = "msg " + (tipo === "ok" ? "ok" : "err");
 }
 
-// O servidor do Google às vezes devolve 404/5xx ou demora demais: tenta de novo antes de desistir.
+// O servidor do Google às vezes devolve 404/5xx ou trava: corta em 15s e tenta de novo (o normal é responder em 1–3s).
 async function chamarAPI(params, tentativas = 3) {
   const url = new URL(APP_SCRIPT_URL);
 
@@ -26,7 +26,7 @@ async function chamarAPI(params, tentativas = 3) {
 
   for (let i = 1; i <= tentativas; i++) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     try {
       const resposta = await fetch(url.toString(), { method: "GET", signal: controller.signal });
