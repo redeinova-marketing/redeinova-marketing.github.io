@@ -16,34 +16,72 @@ function mostrarMsg(id, texto, tipo) {
   el.className = "msg " + (tipo === "ok" ? "ok" : "err");
 }
 
-// O servidor do Google às vezes devolve 404/5xx ou trava: corta em 15s e tenta de novo (o normal é responder em 1–3s).
-async function chamarAPI(params, tentativas = 3) {
+// O servidor do Google às vezes trava uma chamada por 20–30s enquanto a seguinte responde em 1s.
+// Se a resposta demora, dispara outra chamada em paralelo e usa a que chegar primeiro.
+// Todas as ações do painel podem ser repetidas sem problema (salvar o mesmo link duas vezes dá no mesmo).
+const INICIOS_CHAMADA_MS = [0, 3500, 8000];
+const LIMITE_CHAMADA_MS = 45000;
+
+function chamarAPI(params) {
   const url = new URL(APP_SCRIPT_URL);
 
   Object.keys(params).forEach(chave => {
     url.searchParams.append(chave, params[chave]);
   });
 
-  for (let i = 1; i <= tentativas; i++) {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+  return new Promise((resolve, reject) => {
+    const controles = [];
+    const timers = [];
+    let iniciadas = 0;
+    let falhas = 0;
+    let fim = false;
 
-    try {
-      const resposta = await fetch(url.toString(), { method: "GET", signal: controller.signal });
-
-      if (resposta.ok) return await resposta.json();
-
-      const falhaTemporaria = resposta.status === 404 || resposta.status >= 500;
-      if (!falhaTemporaria || i === tentativas) throw new Error("Erro HTTP " + resposta.status);
-    } catch (erro) {
-      if (i === tentativas) throw erro;
-    } finally {
-      clearTimeout(timeoutId);
+    function encerrar() {
+      fim = true;
+      timers.forEach(clearTimeout);
+      controles.forEach(c => c.abort());
     }
 
-    await new Promise(r => setTimeout(r, 800 * i));
-  }
+    function iniciar() {
+      if (fim || iniciadas >= INICIOS_CHAMADA_MS.length) return;
+      iniciadas++;
+
+      const controle = new AbortController();
+      controles.push(controle);
+
+      fetch(url.toString(), { method: "GET", signal: controle.signal })
+        .then(resposta => {
+          if (!resposta.ok) throw new Error("Erro HTTP " + resposta.status);
+          return resposta.json();
+        })
+        .then(data => {
+          if (fim) return;
+          encerrar();
+          resolve(data);
+        })
+        .catch(erro => {
+          if (fim) return;
+          falhas++;
+          if (falhas >= INICIOS_CHAMADA_MS.length) {
+            encerrar();
+            reject(erro);
+          } else {
+            iniciar(); // falhou rápido: dispara a próxima sem esperar o horário dela
+          }
+        });
+    }
+
+    INICIOS_CHAMADA_MS.forEach(ms => timers.push(setTimeout(iniciar, ms)));
+    timers.push(setTimeout(() => {
+      if (fim) return;
+      encerrar();
+      reject(new Error("Tempo esgotado"));
+    }, LIMITE_CHAMADA_MS));
+  });
 }
+
+// "Acorda" o servidor do Google enquanto a pessoa digita o login (a primeira chamada costuma ser a mais lenta).
+fetch(APP_SCRIPT_URL).catch(() => {});
 
 function salvarSessao(email, senha, usuario) {
   sessionStorage.setItem("adminEmail", email);
