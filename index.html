@@ -893,7 +893,7 @@
     const $avisoLink = document.getElementById('avisoLink');
     const $btnBaixarMaterial = document.getElementById('btnBaixarMaterial');
 
-    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwEdJqwSt1ZjtuM0heFN7BNkDuyxKYsj5_k6R0edwhA4H18SSVoTHcLbKDWE7O_ZO9d/exec';
+    const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzq0sbjuFONU9wRcB25Z36LRLQGD58TdW0QWSfXxg6R5fwkaY6D6mo52m7pvefWJtZ_/exec';
 
     const PESQUISA_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwSOKZB1K5EX5HUvSCnT6YVnlPQO9jrv2er_cbuMGXKsMGHh0dpQJ2v0DoEndycpiCB/exec';
 
@@ -966,7 +966,10 @@
     }
 
     function redirecionarOuAvisarMaterial(){
-      if (!materialDisponivel || !linkDrivePendente) {
+      // Só leva a loja para o Google Drive: um link de outro site (golpe) mostra "indisponível".
+      const linkDoDrive = /^https:\/\/drive\.google\.com\//.test(linkDrivePendente);
+
+      if (!materialDisponivel || !linkDrivePendente || !linkDoDrive) {
         mostrarPaginaIndisponivel();
         return;
       }

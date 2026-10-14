@@ -1,8 +1,12 @@
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtrigWkQWCQAW15lAyeGujN0c4Z8Zcdp_53MEGDM0UjIlXHZglmfsNdtMIqyokqyo7/exec";
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzq0sbjuFONU9wRcB25Z36LRLQGD58TdW0QWSfXxg6R5fwkaY6D6mo52m7pvefWJtZ_/exec";
 
 let usuarioLogado = null;
-let senhaLogada = "";
+let tokenSessao = "";
 let lojaAtual = null;
+
+// Links de material: só pastas do Drive (o servidor ainda confere se a pasta é da conta do Marketing).
+const REGEX_PASTA_DRIVE = /^https:\/\/drive\.google\.com\/drive\/(u\/\d+\/)?folders\/[A-Za-z0-9_-]{10,}([?#].*)?$/;
+const MSG_LINK_INVALIDO = "Use o link de uma pasta do Drive do Marketing (começa com https://drive.google.com/drive/folders/).";
 
 function $(id) {
   return document.getElementById(id);
@@ -22,12 +26,19 @@ function mostrarMsg(id, texto, tipo) {
 const INICIOS_CHAMADA_MS = [0, 3500, 8000];
 const LIMITE_CHAMADA_MS = 45000;
 
-function chamarAPI(params) {
+// Chamadas com senha vão por POST (a senha não fica na URL). As demais levam o token da sessão.
+function chamarAPI(params, metodo = "GET") {
   const url = new URL(APP_SCRIPT_URL);
 
-  Object.keys(params).forEach(chave => {
-    url.searchParams.append(chave, params[chave]);
-  });
+  if (metodo === "GET") {
+    Object.keys(params).forEach(chave => {
+      url.searchParams.append(chave, params[chave]);
+    });
+  }
+
+  const opcoesFetch = metodo === "POST"
+    ? { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(params) }
+    : { method: "GET" };
 
   return new Promise((resolve, reject) => {
     const controles = [];
@@ -49,7 +60,7 @@ function chamarAPI(params) {
       const controle = new AbortController();
       controles.push(controle);
 
-      fetch(url.toString(), { method: "GET", signal: controle.signal })
+      fetch(url.toString(), { ...opcoesFetch, signal: controle.signal })
         .then(resposta => {
           if (!resposta.ok) throw new Error("Erro HTTP " + resposta.status);
           return resposta.json();
@@ -83,21 +94,34 @@ function chamarAPI(params) {
 // "Acorda" o servidor do Google enquanto a pessoa digita o login (a primeira chamada costuma ser a mais lenta).
 fetch(APP_SCRIPT_URL).catch(() => {});
 
-function salvarSessao(email, senha, usuario) {
-  sessionStorage.setItem("adminEmail", email);
-  sessionStorage.setItem("adminSenha", senha);
+// A senha não fica guardada no navegador: só o token da sessão (vale 6h no servidor).
+function salvarSessao(token, usuario) {
+  sessionStorage.setItem("adminToken", token);
   sessionStorage.setItem("adminUsuario", JSON.stringify(usuario));
 }
 
 function carregarSessao() {
-  const email = sessionStorage.getItem("adminEmail");
-  const senha = sessionStorage.getItem("adminSenha");
+  // Versões antigas do painel guardavam a senha aqui.
+  sessionStorage.removeItem("adminEmail");
+  sessionStorage.removeItem("adminSenha");
+
+  const token = sessionStorage.getItem("adminToken");
   const usuario = sessionStorage.getItem("adminUsuario");
 
-  if (!email || !senha || !usuario) return false;
+  if (!token || !usuario) return false;
 
   usuarioLogado = JSON.parse(usuario);
-  senhaLogada = senha;
+  tokenSessao = token;
+  return true;
+}
+
+// Se o servidor disser que a sessão acabou, volta para a tela de login.
+function sessaoExpirou(data) {
+  if (!data || data.tipo !== "SESSAO_EXPIRADA") return false;
+
+  limparSessao();
+  abrirLogin();
+  mostrarMsg("loginMsg", data.mensagem || "Sua sessão expirou. Entre de novo.", "err");
   return true;
 }
 
@@ -107,12 +131,11 @@ function atualizarSessaoUsuario(usuario) {
 }
 
 function limparSessao() {
-  sessionStorage.removeItem("adminEmail");
-  sessionStorage.removeItem("adminSenha");
+  sessionStorage.removeItem("adminToken");
   sessionStorage.removeItem("adminUsuario");
 
   usuarioLogado = null;
-  senhaLogada = "";
+  tokenSessao = "";
   lojaAtual = null;
 }
 
@@ -164,6 +187,7 @@ function abrirPerfil() {
 
   $("perfilNome").value = usuarioLogado.nome || "";
   $("perfilEmail").value = usuarioLogado.email || "";
+  $("perfilSenhaAtual").value = "";
   $("perfilSenha").value = "";
   $("perfilSenha").type = "password";
 
@@ -187,16 +211,17 @@ async function login() {
       action: "loginAdmin",
       email: email,
       senha: senha
-    });
+    }, "POST");
 
-    if (!data.sucesso) {
+    if (!data.sucesso || !data.token) {
       return mostrarMsg("loginMsg", data.mensagem || "E-mail ou senha inválidos.", "err");
     }
 
     usuarioLogado = data.usuario;
-    senhaLogada = senha;
+    tokenSessao = data.token;
+    $("loginSenha").value = "";
 
-    salvarSessao(email, senha, usuarioLogado);
+    salvarSessao(tokenSessao, usuarioLogado);
     abrirApp();
     mostrarMsg("loginMsg", "", "ok");
 
@@ -223,8 +248,11 @@ async function buscarLoja() {
   try {
     const data = await chamarAPI({
       action: "buscarLojaAdmin",
+      token: tokenSessao,
       busca: codigo
     });
+
+    if (sessaoExpirou(data)) return;
 
     if (!data.sucesso || !data.loja) {
       return mostrarMsg("buscaMsg", data.mensagem || "Loja não encontrada.", "err");
@@ -285,6 +313,10 @@ async function salvarLink() {
     return mostrarMsg("linkMsg", "Informe o link do Drive.", "err");
   }
 
+  if (!REGEX_PASTA_DRIVE.test(link)) {
+    return mostrarMsg("linkMsg", MSG_LINK_INVALIDO, "err");
+  }
+
   $("btnSalvarLink").disabled = true;
   $("btnSalvarLink").textContent = "Salvando...";
   mostrarMsg("linkMsg", "Salvando link...", "ok");
@@ -292,11 +324,12 @@ async function salvarLink() {
   try {
     const data = await chamarAPI({
       action: "salvarLinkAdmin",
-      email: usuarioLogado.email,
-      senha: senhaLogada,
+      token: tokenSessao,
       codigo: lojaAtual.codigo,
       link: link
     });
+
+    if (sessaoExpirou(data)) return;
 
     if (!data.sucesso) {
       return mostrarMsg("linkMsg", data.mensagem || "Não foi possível salvar o link.", "err");
@@ -307,6 +340,7 @@ async function salvarLink() {
 
     const conferencia = await chamarAPI({
       action: "buscarLojaAdmin",
+      token: tokenSessao,
       busca: lojaAtual.codigo
     });
 
@@ -347,6 +381,9 @@ async function cadastrarLoja() {
   if (cnpjLimpo.length !== 14) return mostrarMsg("novaLojaMsg", "O CNPJ precisa ter 14 dígitos.", "err");
   if (!status) return mostrarMsg("novaLojaMsg", "Selecione o status da loja.", "err");
 
+  const link = $("novaLink").value.trim();
+  if (link && !REGEX_PASTA_DRIVE.test(link)) return mostrarMsg("novaLojaMsg", MSG_LINK_INVALIDO, "err");
+
   $("btnCadastrarLoja").disabled = true;
   $("btnCadastrarLoja").textContent = "Cadastrando...";
   mostrarMsg("novaLojaMsg", "Cadastrando loja...", "ok");
@@ -355,8 +392,7 @@ async function cadastrarLoja() {
     // O servidor aceita a mesma loja duas vezes sem duplicar (a chamada pode ser repetida em paralelo).
     const data = await chamarAPI({
       action: "cadastrarLojaAdmin",
-      email: usuarioLogado.email,
-      senha: senhaLogada,
+      token: tokenSessao,
       codigo: codigo,
       cnpj: formatarCnpj(cnpjLimpo),
       nomeFantasia: $("novaNomeFantasia").value.trim(),
@@ -365,8 +401,10 @@ async function cadastrarLoja() {
       emailLoja: $("novaEmail").value.trim(),
       contato: $("novaContato").value.trim(),
       status: status,
-      link: $("novaLink").value.trim()
+      link: link
     });
+
+    if (sessaoExpirou(data)) return;
 
     if (!data.sucesso) {
       return mostrarMsg("novaLojaMsg", data.mensagem || "Não foi possível cadastrar a loja.", "err");
@@ -375,7 +413,7 @@ async function cadastrarLoja() {
     // Confere na planilha antes de avisar que deu certo.
     mostrarMsg("novaLojaMsg", "Conferindo na planilha...", "ok");
 
-    const conferencia = await chamarAPI({ action: "buscarLojaAdmin", busca: codigo });
+    const conferencia = await chamarAPI({ action: "buscarLojaAdmin", token: tokenSessao, busca: codigo });
     const cnpjGravado = conferencia && conferencia.loja
       ? String(conferencia.loja.cnpj || "").replace(/\D/g, "")
       : "";
@@ -396,7 +434,12 @@ async function cadastrarLoja() {
 }
 
 async function salvarPerfil() {
+  const senhaAtual = $("perfilSenhaAtual").value.trim();
   const novaSenha = $("perfilSenha").value.trim();
+
+  if (!novaSenha) return mostrarMsg("perfilMsg", "Digite a nova senha.", "err");
+  if (novaSenha.length < 8) return mostrarMsg("perfilMsg", "A nova senha precisa ter pelo menos 8 caracteres.", "err");
+  if (!senhaAtual) return mostrarMsg("perfilMsg", "Digite a senha atual.", "err");
 
   $("btnSalvarPerfil").disabled = true;
   $("btnSalvarPerfil").textContent = "Salvando...";
@@ -405,24 +448,22 @@ async function salvarPerfil() {
   try {
     const data = await chamarAPI({
       action: "atualizarPerfilAdmin",
-      email: usuarioLogado.email,
-      senha: senhaLogada,
+      token: tokenSessao,
+      senhaAtual: senhaAtual,
       novaSenha: novaSenha,
       foto: usuarioLogado.foto || ""
-    });
+    }, "POST");
+
+    if (sessaoExpirou(data)) return;
 
     if (!data.sucesso) {
       return mostrarMsg("perfilMsg", data.mensagem || "Não foi possível atualizar o perfil.", "err");
     }
 
-    if (novaSenha) {
-      senhaLogada = novaSenha;
-      sessionStorage.setItem("adminSenha", novaSenha);
-    }
-
     atualizarSessaoUsuario(data.usuario);
     atualizarUsuarioNaTela();
 
+    $("perfilSenhaAtual").value = "";
     $("perfilSenha").value = "";
     $("perfilSenha").type = "password";
 
@@ -447,6 +488,10 @@ function abrirLinkAtual() {
 }
 
 function sair() {
+  if (tokenSessao) {
+    chamarAPI({ action: "sairAdmin", token: tokenSessao }).catch(() => {});
+  }
+
   limparSessao();
   abrirLogin();
 }
