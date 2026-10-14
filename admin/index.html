@@ -6,7 +6,7 @@
   <title>Painel Administrativo</title>
   <link rel="preconnect" href="https://script.google.com" crossorigin>
   <link rel="preconnect" href="https://script.googleusercontent.com" crossorigin>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=20261014">
 </head>
 
 <body>
@@ -52,6 +52,7 @@
 
       <nav class="sidebar-nav">
         <button id="btnLojas" class="nav-btn active" type="button">Lojas</button>
+        <button id="btnNovaLoja" class="nav-btn" type="button">Nova loja</button>
         <button id="btnMeuPerfil" class="nav-btn" type="button">Meu Perfil</button>
         <button id="btnSair" class="nav-btn" type="button">Sair</button>
       </nav>
@@ -130,6 +131,68 @@
 
       </section>
 
+      <section id="novaLojaSection" class="hidden">
+        <div class="card">
+          <h3>Cadastrar nova loja</h3>
+          <p class="subtitle">A loja entra na planilha e já consegue acessar o portal com o CNPJ.</p>
+
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="novaCodigo">Código da loja *</label>
+              <input id="novaCodigo" type="text" inputmode="numeric" placeholder="Ex.: 1508">
+            </div>
+            <div class="form-group">
+              <label for="novaCnpj">CNPJ *</label>
+              <input id="novaCnpj" type="text" inputmode="numeric" placeholder="00.000.000/0000-00">
+            </div>
+            <div class="form-group">
+              <label for="novaNomeFantasia">Nome Fantasia</label>
+              <input id="novaNomeFantasia" type="text">
+            </div>
+            <div class="form-group">
+              <label for="novaRazaoSocial">Razão Social</label>
+              <input id="novaRazaoSocial" type="text">
+            </div>
+            <div class="form-group">
+              <label for="novaTelefone">Telefone</label>
+              <input id="novaTelefone" type="text" placeholder="(00)00000-0000">
+            </div>
+            <div class="form-group">
+              <label for="novaEmail">E-mail</label>
+              <input id="novaEmail" type="email">
+            </div>
+            <div class="form-group">
+              <label for="novaContato">Contato</label>
+              <input id="novaContato" type="text">
+            </div>
+            <div class="form-group">
+              <label for="novaStatus">Status *</label>
+              <select id="novaStatus">
+                <option value="">Selecione</option>
+                <option>Licenciado (RE)Inaugurado</option>
+                <option>Lojas em (RE)Inauguração</option>
+                <option>Lojas não reinauguradas</option>
+                <option>Em Credenciamento</option>
+                <option>Licenciamento de marca</option>
+                <option>Contratos FarmaHub</option>
+                <option>Troca de CNPJ</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="novaLink">Link do Drive / Material</label>
+            <textarea id="novaLink" placeholder="Cole aqui o link do Drive (pode deixar em branco e cadastrar depois)"></textarea>
+          </div>
+
+          <div class="actions">
+            <button id="btnCadastrarLoja" type="button">Cadastrar loja</button>
+          </div>
+
+          <div id="novaLojaMsg" class="msg"></div>
+        </div>
+      </section>
+
       <section id="perfilSection" class="hidden">
         <div id="perfilCard" class="card profile-card">
           <h3>Meu Perfil</h3>
@@ -185,6 +248,6 @@
     </main>
   </section>
 
-  <script src="script.js?v=20261006"></script>
+  <script src="script.js?v=20261014"></script>
 </body>
 </html>

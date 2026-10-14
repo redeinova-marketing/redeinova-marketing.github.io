@@ -1,4 +1,4 @@
-const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwEdJqwSt1ZjtuM0heFN7BNkDuyxKYsj5_k6R0edwhA4H18SSVoTHcLbKDWE7O_ZO9d/exec";
+const APP_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwtrigWkQWCQAW15lAyeGujN0c4Z8Zcdp_53MEGDM0UjIlXHZglmfsNdtMIqyokqyo7/exec";
 
 let usuarioLogado = null;
 let senhaLogada = "";
@@ -144,16 +144,23 @@ function ativarBotaoMenu(botaoAtivo) {
   botaoAtivo.classList.add("active");
 }
 
+function mostrarSecao(idSecao, botao) {
+  ["lojasSection", "novaLojaSection", "perfilSection"].forEach(id => {
+    $(id).classList.toggle("hidden", id !== idSecao);
+  });
+  ativarBotaoMenu(botao);
+}
+
 function abrirLojas() {
-  $("lojasSection").classList.remove("hidden");
-  $("perfilSection").classList.add("hidden");
-  ativarBotaoMenu($("btnLojas"));
+  mostrarSecao("lojasSection", $("btnLojas"));
+}
+
+function abrirNovaLoja() {
+  mostrarSecao("novaLojaSection", $("btnNovaLoja"));
 }
 
 function abrirPerfil() {
-  $("lojasSection").classList.add("hidden");
-  $("perfilSection").classList.remove("hidden");
-  ativarBotaoMenu($("btnMeuPerfil"));
+  mostrarSecao("perfilSection", $("btnMeuPerfil"));
 
   $("perfilNome").value = usuarioLogado.nome || "";
   $("perfilEmail").value = usuarioLogado.email || "";
@@ -322,6 +329,72 @@ async function salvarLink() {
   }
 }
 
+const CAMPOS_NOVA_LOJA = [
+  "novaCodigo", "novaCnpj", "novaNomeFantasia", "novaRazaoSocial",
+  "novaTelefone", "novaEmail", "novaContato", "novaStatus", "novaLink"
+];
+
+function formatarCnpj(digitos) {
+  return digitos.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/, "$1.$2.$3/$4-$5");
+}
+
+async function cadastrarLoja() {
+  const codigo = $("novaCodigo").value.trim();
+  const cnpjLimpo = $("novaCnpj").value.replace(/\D/g, "");
+  const status = $("novaStatus").value;
+
+  if (!codigo) return mostrarMsg("novaLojaMsg", "Informe o código da loja.", "err");
+  if (cnpjLimpo.length !== 14) return mostrarMsg("novaLojaMsg", "O CNPJ precisa ter 14 dígitos.", "err");
+  if (!status) return mostrarMsg("novaLojaMsg", "Selecione o status da loja.", "err");
+
+  $("btnCadastrarLoja").disabled = true;
+  $("btnCadastrarLoja").textContent = "Cadastrando...";
+  mostrarMsg("novaLojaMsg", "Cadastrando loja...", "ok");
+
+  try {
+    // O servidor aceita a mesma loja duas vezes sem duplicar (a chamada pode ser repetida em paralelo).
+    const data = await chamarAPI({
+      action: "cadastrarLojaAdmin",
+      email: usuarioLogado.email,
+      senha: senhaLogada,
+      codigo: codigo,
+      cnpj: formatarCnpj(cnpjLimpo),
+      nomeFantasia: $("novaNomeFantasia").value.trim(),
+      razaoSocial: $("novaRazaoSocial").value.trim(),
+      telefone: $("novaTelefone").value.trim(),
+      emailLoja: $("novaEmail").value.trim(),
+      contato: $("novaContato").value.trim(),
+      status: status,
+      link: $("novaLink").value.trim()
+    });
+
+    if (!data.sucesso) {
+      return mostrarMsg("novaLojaMsg", data.mensagem || "Não foi possível cadastrar a loja.", "err");
+    }
+
+    // Confere na planilha antes de avisar que deu certo.
+    mostrarMsg("novaLojaMsg", "Conferindo na planilha...", "ok");
+
+    const conferencia = await chamarAPI({ action: "buscarLojaAdmin", busca: codigo });
+    const cnpjGravado = conferencia && conferencia.loja
+      ? String(conferencia.loja.cnpj || "").replace(/\D/g, "")
+      : "";
+
+    if (cnpjGravado !== cnpjLimpo) {
+      return mostrarMsg("novaLojaMsg", "⚠️ A loja NÃO apareceu na planilha. Clique em Cadastrar loja de novo.", "err");
+    }
+
+    CAMPOS_NOVA_LOJA.forEach(id => { $(id).value = ""; });
+    mostrarMsg("novaLojaMsg", `✅ Loja ${codigo} cadastrada e conferida na planilha. Ela já pode acessar o portal.`, "ok");
+
+  } catch (erro) {
+    mostrarMsg("novaLojaMsg", "⚠️ A loja NÃO foi cadastrada (servidor não respondeu). Clique em Cadastrar loja de novo.", "err");
+  } finally {
+    $("btnCadastrarLoja").disabled = false;
+    $("btnCadastrarLoja").textContent = "Cadastrar loja";
+  }
+}
+
 async function salvarPerfil() {
   const novaSenha = $("perfilSenha").value.trim();
 
@@ -460,6 +533,8 @@ function configurarEventos() {
   $("btnAbrirLink").addEventListener("click", abrirLinkAtual);
 
   $("btnLojas").addEventListener("click", abrirLojas);
+  $("btnNovaLoja").addEventListener("click", abrirNovaLoja);
+  $("btnCadastrarLoja").addEventListener("click", cadastrarLoja);
   $("btnMeuPerfil").addEventListener("click", abrirPerfil);
   $("btnSalvarPerfil").addEventListener("click", salvarPerfil);
 

@@ -84,6 +84,7 @@ body {
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid var(--border);
@@ -102,6 +103,7 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   border-color: #e08a88;
   box-shadow: 0 0 0 4px rgba(224,138,136,.2);
@@ -349,6 +351,13 @@ button:disabled {
   margin-top: 18px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 14px;
+  margin-top: 18px;
+}
+
 .detail {
   background: var(--bg-soft);
   border: 1px solid var(--border);
@@ -480,7 +489,7 @@ input[type="file"]::file-selector-button {
   }
 
   .sidebar-nav {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .topbar {
@@ -492,7 +501,8 @@ input[type="file"]::file-selector-button {
     grid-template-columns: 1fr;
   }
 
-  .details-grid {
+  .details-grid,
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }
