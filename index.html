@@ -784,7 +784,7 @@
 
       <div id="pesquisaTerceiros" class="pesquisa-extra" hidden>
         <div id="terceirosPasso1">
-          <span class="extra-etapa">Só mais uma perguntinha 😊</span>
+          <span class="extra-etapa">Antes de começar, uma perguntinha rápida 😊</span>
           <h2>Sua loja paga alguém de fora (freelancer, agência, designer) para fazer artes ou cuidar das redes sociais?</h2>
           <div class="extra-opcoes duas">
             <button type="button" class="avaliacao-btn paga-btn" data-paga="Não">Não</button>
@@ -793,7 +793,7 @@
         </div>
 
         <div id="terceirosPasso2" hidden>
-          <span class="extra-etapa">Última pergunta</span>
+          <span class="extra-etapa">Só mais esta</span>
           <h2>Quanto por mês, mais ou menos?</h2>
           <div class="extra-opcoes">
             <button type="button" class="avaliacao-btn valor-btn" data-valor="Até R$ 500">Até R$ 500</button>
@@ -946,8 +946,6 @@
 
       $popupPesquisa.classList.add('ativo');
       $popupPesquisa.setAttribute('aria-hidden', 'false');
-
-      buscarStatusTerceiros(cnpj);
 
       setTimeout(() => {
         $pesquisaResponsavel.focus();
@@ -1156,33 +1154,23 @@
       }
     }
 
-    // Envio lendo a resposta (usado só se o Apps Script da pesquisa ainda não informar o status das perguntas extras).
-    async function enviarLendoResposta(corpo){
-      const controle = new AbortController();
-      const timer = setTimeout(() => controle.abort(), 25000);
-
-      try {
-        const resp = await fetch(PESQUISA_SCRIPT_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: corpo,
-          signal: controle.signal
-        });
-
-        if (!resp.ok) throw new Error('HTTP ' + resp.status);
-        return await resp.json();
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
-    // As perguntas extras aparecem uma vez por loja. O status é buscado assim que a pesquisa abre,
-    // enquanto a loja preenche, para não atrasar o "Finalizar".
+    // A pergunta de terceiros aparece uma vez por loja, ANTES da pesquisa de satisfação (ou do aviso).
+    // O status é buscado junto com a consulta do CNPJ, para não atrasar o "Liberar acesso".
     let statusTerceiros = null;
 
     function buscarStatusTerceiros(cnpj){
-      statusTerceiros = buscarRapido(`${PESQUISA_SCRIPT_URL}?action=status&cnpj=${encodeURIComponent(cnpj)}`)
+      if (statusTerceiros && statusTerceiros.cnpj === cnpj) return statusTerceiros.promessa;
+
+      const promessa = buscarRapido(`${PESQUISA_SCRIPT_URL}?action=status&cnpj=${encodeURIComponent(cnpj)}`)
         .catch(() => null);
+      statusTerceiros = { cnpj, promessa };
+      return promessa;
+    }
+
+    // true/false; null se a resposta não chegar a tempo (aí a loja segue sem a pergunta, para não travar).
+    async function jaRespondeuTerceiros(cnpj){
+      const status = await Promise.race([buscarStatusTerceiros(cnpj), esperar(3000).then(() => null)]);
+      return (status && typeof status.jaRespondeuTerceiros === 'boolean') ? status.jaRespondeuTerceiros : null;
     }
 
     function ehNaoCadastrado(msg){
@@ -1241,36 +1229,13 @@
           comentario: comentario
         });
 
-        const status = await Promise.race([statusTerceiros || null, esperar(3000).then(() => null)]);
-        let jaRespondeuTerceiros;
-
-        if (status && typeof status.jaRespondeuTerceiros === 'boolean') {
-          // Caminho rápido: já sabemos das perguntas extras, então só precisamos confirmar que a pesquisa foi gravada.
-          const gravou = await enviarSemEsperarResposta(payloadPesquisa);
-          if (!gravou) return mostrarPesquisa('Não foi possível registrar a pesquisa. Tente novamente.', 'err');
-          jaRespondeuTerceiros = status.jaRespondeuTerceiros;
-        } else {
-          const dataPesquisa = await enviarLendoResposta(payloadPesquisa);
-
-          if (!dataPesquisa || !dataPesquisa.ok) {
-            return mostrarPesquisa(
-              (dataPesquisa && dataPesquisa.msg) ? dataPesquisa.msg : 'Não foi possível registrar a pesquisa.',
-              'err'
-            );
-          }
-
-          jaRespondeuTerceiros = dataPesquisa.jaRespondeuTerceiros;
-        }
+        const gravou = await enviarSemEsperarResposta(payloadPesquisa);
+        if (!gravou) return mostrarPesquisa('Não foi possível registrar a pesquisa. Tente novamente.', 'err');
 
         enviouComSucesso = true;
 
         mostrarPesquisa('', '');
-
-        if (jaRespondeuTerceiros === false) {
-          mostrarPerguntasTerceiros(responsavel);
-        } else {
-          agradecerEIrParaMaterial(responsavel);
-        }
+        agradecerEIrParaMaterial(responsavel);
 
       } catch (err) {
         return mostrarPesquisa('Erro ao enviar a pesquisa. Tente novamente.', 'err');
@@ -1286,8 +1251,9 @@
       window.location.reload();
     });
 
-    // Perguntas extras (uma vez por loja): o Apps Script da pesquisa avisa se o CNPJ ainda não respondeu.
-    let responsavelAtual = '';
+    // Pergunta de terceiros (uma vez por loja): o Apps Script da pesquisa avisa se o CNPJ ainda não respondeu.
+    let cnpjTerceiros = '';
+    let depoisDosTerceiros = null;
 
     function esperar(ms){
       return new Promise(r => setTimeout(r, ms));
@@ -1302,37 +1268,57 @@
       Promise.all([esperar(TEMPO_AGRADECIMENTO_MS), envio]).then(irParaMaterial);
     }
 
-    function mostrarPerguntasTerceiros(responsavel){
-      responsavelAtual = responsavel;
+    // Abre a pergunta de terceiros; ao responder (ou fechar no X), segue para "depois" (pesquisa ou aviso).
+    function abrirPerguntasTerceiros(cnpj, depois){
+      cnpjTerceiros = cnpj;
+      depoisDosTerceiros = depois;
+
       esconderGigi();
+      $popupShell.classList.remove('concluida');
       $popupShell.classList.add('extras');
       $pesquisaConteudo.hidden = true;
+      $pesquisaObrigado.hidden = true;
       $pesquisaTerceiros.hidden = false;
       $terceirosPasso1.hidden = false;
       $terceirosPasso2.hidden = true;
+      $pesquisaTerceiros.querySelectorAll('button').forEach(b => {
+        b.disabled = false;
+        b.classList.remove('selecionado');
+      });
+
+      $popupPesquisa.classList.add('ativo');
+      $popupPesquisa.setAttribute('aria-hidden', 'false');
       $popupShell.querySelector('.popup-card').scrollTop = 0;
     }
 
-    async function salvarTerceiros(pagaTerceiros, valorMensal){
-      try {
-        // keepalive: o envio continua mesmo depois que a página abre o Drive.
-        await enviarSemEsperarResposta(JSON.stringify({
-          action: 'pesquisa_terceiros',
-          cnpj: limparNumeros($pesquisaCnpj.value),
-          pagaTerceiros: pagaTerceiros,
-          valorMensal: valorMensal
-        }), true);
-      } catch (_) {
-        // Se não conseguir salvar, a loja segue para o material do mesmo jeito.
-      }
+    function seguirDepoisDosTerceiros(){
+      const depois = depoisDosTerceiros;
+      depoisDosTerceiros = null;
+
+      $popupShell.classList.remove('extras');
+      $pesquisaTerceiros.hidden = true;
+      $popupPesquisa.classList.remove('ativo');
+      $popupPesquisa.setAttribute('aria-hidden', 'true');
+
+      if (depois) depois();
+    }
+
+    function salvarTerceiros(pagaTerceiros, valorMensal){
+      // keepalive: o envio continua mesmo se a loja já sair da página. Se falhar, a loja segue do mesmo jeito.
+      enviarSemEsperarResposta(JSON.stringify({
+        action: 'pesquisa_terceiros',
+        cnpj: cnpjTerceiros,
+        pagaTerceiros: pagaTerceiros,
+        valorMensal: valorMensal
+      }), true).catch(() => {});
     }
 
     function responderTerceiros(botao, pagaTerceiros, valorMensal){
       botao.classList.add('selecionado');
       $pesquisaTerceiros.querySelectorAll('button').forEach(b => b.disabled = true);
 
-      const envio = Promise.race([salvarTerceiros(pagaTerceiros, valorMensal), esperar(4000)]);
-      agradecerEIrParaMaterial(responsavelAtual, envio);
+      salvarTerceiros(pagaTerceiros, valorMensal);
+      setTimeout(seguirDepoisDosTerceiros, 300); // tempo de ver o botão marcado
     }
 
     $pagaBtns.forEach(btn => {
@@ -1351,9 +1337,9 @@
       btn.addEventListener('click', () => responderTerceiros(btn, 'Sim', btn.dataset.valor));
     });
 
-    // Nas perguntas extras o X não chama a Gigi: a pesquisa já foi respondida, então leva direto ao material.
+    // Na pergunta de terceiros o X não chama a Gigi: pula a pergunta e segue para a pesquisa (ou o aviso).
     $btnFecharPesquisa.addEventListener('click', () => {
-      if ($popupShell.classList.contains('extras')) irParaMaterial();
+      if ($popupShell.classList.contains('extras')) seguirDepoisDosTerceiros();
     });
 
     $btnFinalizarPesquisa.addEventListener('click', enviarPesquisa);
@@ -1380,7 +1366,10 @@
 
     $cnpj.addEventListener('input', () => {
       const cnpj = limparNumeros($cnpj.value);
-      if (cnpj.length === 14) consultarCNPJ(cnpj);
+      if (cnpj.length === 14) {
+        consultarCNPJ(cnpj);
+        buscarStatusTerceiros(cnpj);
+      }
     });
 
     // "Acorda" o servidor do Google enquanto a loja digita (a primeira chamada costuma ser a mais lenta).
@@ -1396,6 +1385,7 @@
       $btn.disabled = true;
 
       try {
+        buscarStatusTerceiros(cnpj);
         const data = await consultarCNPJ(cnpj);
 
         if (!data || !data.sucesso) {
@@ -1418,12 +1408,19 @@
         const intercept = (data && data.intercept) ? data.intercept : null;
         const modoIntercept = (intercept && String(intercept.modo || '').toLowerCase() === 'aviso') ? 'aviso' : 'csat';
 
-        if (modoIntercept === 'aviso') {
-          mostrar('Acesso liberado.', 'ok');
-          abrirPopupAviso(intercept, linkRecebido, temMaterial);
+        const proximaEtapa = modoIntercept === 'aviso'
+          ? () => abrirPopupAviso(intercept, linkRecebido, temMaterial)
+          : () => abrirPopupPesquisa(linkRecebido, cnpj, temMaterial);
+
+        mostrar(modoIntercept === 'aviso'
+          ? 'Acesso liberado.'
+          : 'Acesso liberado. Responda a pesquisa para acessar o material.', 'ok');
+
+        // Loja que ainda não respondeu sobre terceiros vê essa pergunta primeiro.
+        if (await jaRespondeuTerceiros(cnpj) === false) {
+          abrirPerguntasTerceiros(cnpj, proximaEtapa);
         } else {
-          mostrar('Acesso liberado. Responda a pesquisa para acessar o material.', 'ok');
-          abrirPopupPesquisa(linkRecebido, cnpj, temMaterial);
+          proximaEtapa();
         }
 
       } catch (err) {
